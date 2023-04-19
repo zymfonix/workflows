@@ -2,6 +2,13 @@ name: Assets
 
 on:
   workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_S3_BUCKET:
+        required: true
 
 jobs:
   assets:

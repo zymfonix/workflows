@@ -2,6 +2,9 @@ name: Bump
 
 on:
   workflow_call:
+    secrets:
+      GH_PRIV_TOKEN:
+        required: true
 
 jobs:
   build:
