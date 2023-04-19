@@ -54,7 +54,9 @@ jobs:
             extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick
             coverage: none
 
-      -   run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
+      -   name: Reconfigure git URLs
+          run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
+
       -   name: Install npm dependencies
           run: npm ci
 

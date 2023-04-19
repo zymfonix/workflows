@@ -3,6 +3,8 @@ name: Assets
 on:
   workflow_call:
     secrets:
+      GH_PRIV_TOKEN:
+        required: true
       AWS_ACCESS_KEY_ID:
         required: true
       AWS_SECRET_ACCESS_KEY:
@@ -32,6 +34,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
+
+      - name: Reconfigure git URLs
+        run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
 
       - name: Install packages
         run: npm ci
