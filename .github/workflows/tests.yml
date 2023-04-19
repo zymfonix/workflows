@@ -1,0 +1,86 @@
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: module
+          MYSQL_HOST: 127.0.0.1
+        ports:
+          - '8888:3306'
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    name: Run tests
+
+    steps:
+      -   name: Checkout code
+          uses: actions/checkout@v2
+          with:
+            persist-credentials: false
+            fetch-depth: '0'
+
+      -   name: Cache dependencies
+          uses: actions/cache@v1
+          with:
+            path: ~/.composer/cache/files
+            key: dependencies-composer-${{ hashFiles('composer.json') }}
+
+      -   name: Setup Node
+          uses: actions/setup-node@v1
+          with:
+            node-version: "12.x"
+
+      -   name: Setup PHP
+          uses: shivammathur/setup-php@v2
+          with:
+            php-version: 8.1
+            extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick
+            coverage: none
+
+      -   run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
+      -   name: Install npm dependencies
+          run: npm ci
+
+      -   name: Run lint
+          run: ./node_modules/.bin/eslint -c ./.eslintrc.js ./resources/js/**/*.*
+
+      -   name: Setup Composer Access
+          run: |
+            composer config -g repositories.private-packagist composer ${{ secrets.PACKAGIST_REPO }}
+            composer config -g repositories.packagist.org false
+            composer config -g -a github-oauth.github.com ${{ secrets.GH_PRIV_TOKEN }}
+            composer config -g -a http-basic.repo.packagist.com ${{ secrets.PACKAGIST_USER }} ${{ secrets.PACKAGIST_PASS }}
+
+      -   name: Install composer dependencies
+          run: |
+            composer update --prefer-dist --no-interaction
+
+      -   name: Setup database
+          run: mysql -h 127.0.0.1 --port 8888 -u root -ppassword -e 'CREATE DATABASE IF NOT EXISTS module;'
+
+      -   name: Execute tests
+          run: DB_TEST_HOST=127.0.0.1 DB_TEST_PORT=8888 DB_PORT=8888 DB_TEST_PASSWORD=password vendor/bin/phpunit
+
+      -   name: Bump version and push tag
+          if: success() && github.event.ref == 'refs/heads/master'
+          id: tag_version
+          uses: mathieudutour/github-tag-action@v6.0
+          with:
+            github_token: ${{ secrets.GH_PRIV_TOKEN }}
+            tag_prefix: ''
+
+      -   name: Create a GitHub release
+          if: success() && github.event.ref == 'refs/heads/master'
+          uses: ncipollo/release-action@v1
+          with:
+            tag: ${{ steps.tag_version.outputs.new_tag }}
+            name: Release ${{ steps.tag_version.outputs.new_tag }}
+            body: ${{ steps.tag_version.outputs.changelog }}

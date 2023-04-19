@@ -1,0 +1,52 @@
+name: Assets
+
+on:
+  workflow_call:
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+
+    name: Compile assets
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+
+      - name: Install packages
+        run: npm ci
+
+      - name: Build assets
+        run: npm run production
+
+      - name: Get name of module
+        id: composer
+        run: echo "::set-output name=name::$(node -e 'var composer = require("./composer.json"); var path = require("path"); console.log(path.basename(composer.name));')"
+
+      - name: Get tag version
+        id: tag
+        run: echo "::set-output name=name::$(node -e 'var path = require("path"); console.log(path.basename("${{ github.event.ref }}"));')"
+
+      - uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'eu-west-1'
+          SOURCE_DIR: 'dist'
+          DEST_DIR: '${{ steps.composer.outputs.name }}/${{ steps.tag.outputs.name }}'
