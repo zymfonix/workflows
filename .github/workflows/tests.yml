@@ -2,6 +2,15 @@ name: Tests
 
 on:
   workflow_call:
+    secrets:
+      GH_PRIV_TOKEN:
+        required: true
+      PACKAGIST_REPO:
+        required: true
+      PACKAGIST_USER:
+        required: true
+      PACKAGIST_PASS:
+        required: true
 
 jobs:
   test:
