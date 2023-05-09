@@ -42,8 +42,15 @@ jobs:
             path: ~/.composer/cache/files
             key: dependencies-composer-${{ hashFiles('composer.json') }}
 
+      - name: Check for assets
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "package-lock.json"
+
       -   name: Setup Node
           uses: actions/setup-node@v1
+          if: steps.check_files.outputs.files_exists == 'true'
           with:
             node-version: "12.x"
 
@@ -58,9 +65,11 @@ jobs:
           run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
 
       -   name: Install npm dependencies
+          if: steps.check_files.outputs.files_exists == 'true'
           run: npm ci
 
       -   name: Run lint
+          if: steps.check_files.outputs.files_exists == 'true'
           run: ./node_modules/.bin/eslint -c ./.eslintrc.js ./resources/js/**/*.*
 
       -   name: Setup Composer Access
