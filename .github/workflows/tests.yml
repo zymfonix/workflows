@@ -67,6 +67,8 @@ jobs:
       -   name: Install npm dependencies
           if: steps.check_files.outputs.files_exists == 'true'
           run: npm ci
+          env:
+            GITHUB_TOKEN: ${{ secrets.GH_PRIV_TOKEN }}
 
       -   name: Run lint
           if: steps.check_files.outputs.files_exists == 'true'
