@@ -40,9 +40,13 @@ jobs:
 
       - name: Install packages
         run: npm ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PRIV_TOKEN }}
 
       - name: Build assets
         run: npm run production
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PRIV_TOKEN }}
 
       - name: Get name of module
         id: composer
