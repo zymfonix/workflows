@@ -33,7 +33,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14.x'
 
       - name: Reconfigure git URLs
         run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
