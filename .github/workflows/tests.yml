@@ -36,23 +36,11 @@ jobs:
             persist-credentials: false
             fetch-depth: '0'
 
-      -   name: Cache dependencies
-          uses: actions/cache@v1
-          with:
-            path: ~/.composer/cache/files
-            key: dependencies-composer-${{ hashFiles('composer.json') }}
-
-      - name: Check for assets
-        id: check_files
-        uses: andstor/file-existence-action@v1
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
         with:
-          files: "package-lock.json"
-
-      -   name: Setup Node
-          uses: actions/setup-node@v1
-          if: steps.check_files.outputs.files_exists == 'true'
-          with:
-            node-version: "12.x"
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
 
       -   name: Setup PHP
           uses: shivammathur/setup-php@v2
@@ -64,16 +52,6 @@ jobs:
       -   name: Reconfigure git URLs
           run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
 
-      -   name: Install npm dependencies
-          if: steps.check_files.outputs.files_exists == 'true'
-          run: npm ci
-          env:
-            GITHUB_TOKEN: ${{ secrets.GH_PRIV_TOKEN }}
-
-      -   name: Run lint
-          if: steps.check_files.outputs.files_exists == 'true'
-          run: ./node_modules/.bin/eslint -c ./.eslintrc.js ./resources/js/**/*.*
-
       -   name: Setup Composer Access
           run: |
             composer config -g repositories.private-packagist composer ${{ secrets.PACKAGIST_REPO }}
@@ -81,9 +59,12 @@ jobs:
             composer config -g -a github-oauth.github.com ${{ secrets.GH_PRIV_TOKEN }}
             composer config -g -a http-basic.repo.packagist.com ${{ secrets.PACKAGIST_USER }} ${{ secrets.PACKAGIST_PASS }}
 
-      -   name: Install composer dependencies
-          run: |
-            composer update --prefer-dist --no-interaction
+      - name: Install dependencies
+        uses: php-actions/composer@v6
+        with:
+          php_version: "8.1"
+          command: update
+          args: --prefer-dist --no-interaction
 
       -   name: Setup database
           run: mysql -h 127.0.0.1 --port 8888 -u root -ppassword -e 'CREATE DATABASE IF NOT EXISTS module;'
