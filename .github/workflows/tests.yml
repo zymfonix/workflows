@@ -31,16 +31,10 @@ jobs:
 
     steps:
       -   name: Checkout code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
           with:
             persist-credentials: false
             fetch-depth: '0'
-
-      -   name: Cache dependencies
-          uses: actions/cache@v1
-          with:
-            path: ~/.composer/cache/files
-            key: dependencies-composer-${{ hashFiles('composer.json') }}
 
       - name: Check for assets
         id: check_files
@@ -49,10 +43,10 @@ jobs:
           files: "package-lock.json"
 
       -   name: Setup Node
-          uses: actions/setup-node@v1
+          uses: actions/setup-node@v4
           if: steps.check_files.outputs.files_exists == 'true'
           with:
-            node-version: "12.x"
+            node-version: "14.x"
 
       -   name: Setup PHP
           uses: shivammathur/setup-php@v2
@@ -61,6 +55,17 @@ jobs:
             extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick
             coverage: none
 
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+          
       -   name: Reconfigure git URLs
           run: git config --global url."https://${{ secrets.GH_PRIV_TOKEN }}@github.com/".insteadOf ssh://git@github.com/
 
