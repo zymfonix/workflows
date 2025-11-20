@@ -66,3 +66,27 @@ jobs:
           AWS_REGION: 'eu-west-1'
           SOURCE_DIR: 'dist'
           DEST_DIR: '${{ steps.composer.outputs.name }}/${{ steps.tag.outputs.name }}'
+
+      - name: Check for hotfix in commit message
+        id: check
+        run: |
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          if echo "${{ github.event.head_commit.message }}" | grep -q "#hotfix"; then
+            echo "::set-output name=hotfix::true"
+          else
+            echo "::set-output name=hotfix::false"
+          fi
+
+      - name: Trigger repo dispatch on other repo if hotfix
+        if: steps.check.outputs.hotfix == 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GH_PRIV_TOKEN }}
+          repository: osmaviation/deployment
+          event-type: hotfix-event
+          client-payload: |
+            {
+              "ref": "${{ github.ref }}",
+              "sha": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message }}"
+            }
