@@ -2,6 +2,12 @@ name: Assets
 
 on:
   workflow_call:
+    inputs:
+      node_version:
+        description: "Node version to use (e.g. 16.x, 18.x, 20.x)"
+        required: false
+        default: "14.x"
+        type: string
     secrets:
       GH_PRIV_TOKEN:
         required: true
@@ -25,7 +31,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: '14.x'
+          node-version: ${{ inputs.node_version }}
 
       - name: Cache
         uses: actions/cache@v3
@@ -51,11 +57,11 @@ jobs:
 
       - name: Get name of module
         id: composer
-        run: echo "::set-output name=name::$(node -e 'var composer = require("./composer.json"); var path = require("path"); console.log(path.basename(composer.name));')"
+        run: echo "name=$(node -e 'var composer = require(\"./composer.json\"); var path = require(\"path\"); console.log(path.basename(composer.name));')" >> $GITHUB_OUTPUT
 
       - name: Get tag version
         id: tag
-        run: echo "::set-output name=name::$(node -e 'var path = require("path"); console.log(path.basename("${{ github.event.ref }}"));')"
+        run: echo "name=$(node -e 'var path = require(\"path\"); console.log(path.basename(\"${{ github.event.ref }}\"));')" >> $GITHUB_OUTPUT
 
       - uses: jakejarvis/s3-sync-action@master
         with:
@@ -73,9 +79,9 @@ jobs:
         run: |
           echo "Commit message: ${{ github.event.head_commit.message }}"
           if echo "${{ github.event.head_commit.message }}" | grep -q "#hotfix"; then
-            echo "::set-output name=hotfix::true"
+            echo "hotfix=true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=hotfix::false"
+            echo "hotfix=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Trigger repo dispatch on other repo if hotfix
