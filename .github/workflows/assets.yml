@@ -41,6 +41,7 @@ jobs:
       - name: Install packages
         run: npm ci
         env:
+          NODE_OPTIONS: --openssl-legacy-provider
           GITHUB_TOKEN: ${{ secrets.GH_PRIV_TOKEN }}
 
       - name: Build assets
