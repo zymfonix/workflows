@@ -53,17 +53,16 @@ jobs:
         run: npm run production
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PRIV_TOKEN }}
-
+          
       - name: Get name of module
         id: composer
         run: |
-          echo "name=$(node -p 'require(\"./composer.json\").name.split(\"/\").pop()')" >> $GITHUB_OUTPUT
+          echo "name=$(node -p \"require('./composer.json').name.split('/').pop()\")" >> $GITHUB_OUTPUT
       
       - name: Get tag version
         id: tag
         run: |
-          echo "name=$(node -p 'require(\"path\").basename(\"${{ github.event.ref }}\")')" >> $GITHUB_OUTPUT
-
+          echo "name=$(node -p \"require('path').basename('${{ github.event.ref }}')\")" >> $GITHUB_OUTPUT
 
 
       - uses: jakejarvis/s3-sync-action@master
