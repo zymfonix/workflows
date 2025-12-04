@@ -56,11 +56,14 @@ jobs:
 
       - name: Get name of module
         id: composer
-        run: echo "name=$(node -e 'var composer = require(\"./composer.json\"); var path = require(\"path\"); console.log(path.basename(composer.name));')" >> $GITHUB_OUTPUT
-
+        run: |
+          echo "name=$(node -p 'require(\"./composer.json\").name.split(\"/\").pop()')" >> $GITHUB_OUTPUT
+      
       - name: Get tag version
         id: tag
-        run: echo "name=$(node -p "require('path').basename(\"${{ github.event.ref }}\")" >> $GITHUB_OUTPUT
+        run: |
+          echo "name=$(node -p 'require(\"path\").basename(\"${{ github.event.ref }}\")')" >> $GITHUB_OUTPUT
+
 
 
       - uses: jakejarvis/s3-sync-action@master
