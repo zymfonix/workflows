@@ -60,7 +60,8 @@ jobs:
 
       - name: Get tag version
         id: tag
-        run: echo "name=$(node -e 'var path = require(\"path\"); console.log(path.basename(\"${{ github.event.ref }}\"));')" >> $GITHUB_OUTPUT
+        run: echo "name=$(node -p "require('path').basename(\"${{ github.event.ref }}\")" >> $GITHUB_OUTPUT
+
 
       - uses: jakejarvis/s3-sync-action@master
         with:
